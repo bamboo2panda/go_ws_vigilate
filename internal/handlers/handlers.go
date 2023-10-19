@@ -2,6 +2,11 @@ package handlers
 
 import (
 	"fmt"
+	"log"
+	"net/http"
+	"runtime/debug"
+	"strconv"
+
 	"github.com/CloudyKit/jet/v6"
 	"github.com/go-chi/chi"
 	"github.com/tsawler/vigilate/internal/config"
@@ -10,13 +15,9 @@ import (
 	"github.com/tsawler/vigilate/internal/models"
 	"github.com/tsawler/vigilate/internal/repository"
 	"github.com/tsawler/vigilate/internal/repository/dbrepo"
-	"log"
-	"net/http"
-	"runtime/debug"
-	"strconv"
 )
 
-//Repo is the repository
+// Repo is the repository
 var Repo *DBRepo
 var app *config.AppConfig
 
@@ -43,7 +44,7 @@ func NewPostgresqlHandlers(db *driver.DB, a *config.AppConfig) *DBRepo {
 // AdminDashboard displays the dashboard
 func (repo *DBRepo) AdminDashboard(w http.ResponseWriter, r *http.Request) {
 	vars := make(jet.VarMap)
-	vars.Set("no_healthy", 0)
+	vars.Set("no_healthy", 10)
 	vars.Set("no_problem", 0)
 	vars.Set("no_pending", 0)
 	vars.Set("no_warning", 0)
