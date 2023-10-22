@@ -43,7 +43,7 @@ func (repo *DBRepo) AllWarningServices(w http.ResponseWriter, r *http.Request) {
 
 // AllProblemServices lists all problem services
 func (repo *DBRepo) AllProblemServices(w http.ResponseWriter, r *http.Request) {
-	services, err := repo.DB.GetServicesByStatus("problems")
+	services, err := repo.DB.GetServicesByStatus("problem")
 	if err != nil {
 		log.Println(err)
 		return

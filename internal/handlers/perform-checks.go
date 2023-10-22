@@ -19,7 +19,7 @@ const (
 	SSLCertificate = 3
 )
 
-type JSONResp struct {
+type jsonResp struct {
 	OK            bool      `json:"ok"`
 	Message       string    `json:"message"`
 	ServiceID     int       `json:"service_id"`
@@ -28,6 +28,11 @@ type JSONResp struct {
 	OldStatus     string    `json:"old_status"`
 	NewStatus     string    `json:"new_status"`
 	LastCheck     time.Time `json:"last_chesk"`
+}
+
+// ScheduleCheck perform of the scheduled check of the host service by id
+func (repo *DBRepo) ScheduleCheck(hostServiceID int) {
+
 }
 
 func (repo *DBRepo) TestCheck(w http.ResponseWriter, r *http.Request) {
@@ -65,9 +70,9 @@ func (repo *DBRepo) TestCheck(w http.ResponseWriter, r *http.Request) {
 	// broadcast service status changed event
 
 	//create json to client
-	var resp JSONResp
+	var resp jsonResp
 	if okay {
-		resp = JSONResp{
+		resp = jsonResp{
 			OK:            true,
 			Message:       msg,
 			ServiceID:     hs.ServiceID,
