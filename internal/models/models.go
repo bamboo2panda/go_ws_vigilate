@@ -3,6 +3,8 @@ package models
 import (
 	"errors"
 	"time"
+
+	"github.com/robfig/cron/v3"
 )
 
 var (
@@ -77,8 +79,34 @@ type HostService struct {
 	ScheduleUnit   string
 	Status         string
 	LastCheck      time.Time
+	LastMessage    string
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
 	Service        Service
 	HostName       string
+}
+
+// Schedule model
+type Schedule struct {
+	ID            int
+	EntryID       cron.EntryID
+	Entry         cron.Entry
+	Host          string
+	Service       string
+	LastRunFromHS time.Time
+	HostServiceID int
+	ScheduleText  string
+}
+
+// Event model
+type Event struct {
+	ID            int
+	EventType     string
+	HostServiceID int
+	HostID        int
+	ServiceName   string
+	HostName      string
+	Message       string
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
 }

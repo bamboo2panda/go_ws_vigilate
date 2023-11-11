@@ -23,7 +23,7 @@ func (repo *DBRepo) StartMonitoring() {
 		data := make(map[string]string)
 		data["message"] = "Monitoring is starting..."
 
-		err := app.WsClient.Trigger("publuc-channel", "app-starting", data)
+		err := app.WsClient.Trigger("public-channel", "app-starting", data)
 		if err != nil {
 			log.Println(err)
 		}
@@ -62,15 +62,15 @@ func (repo *DBRepo) StartMonitoring() {
 			// 	broadcast over websockets the fact that the service is scheduled
 			payload := make(map[string]string)
 			payload["message"] = "scheduling"
-			data["host_service_id"] = strconv.Itoa(x.ID)
+			payload["host_service_id"] = strconv.Itoa(x.ID)
 			yearone := time.Date(0001, 11, 17, 20, 34, 58, 65138737, time.UTC)
 			if app.Scheduler.Entry(app.MonitorMap[x.HostID]).Next.After(yearone) {
-				data["next_run"] = app.Scheduler.Entry(app.MonitorMap[x.HostID]).Next.Format("2006-01-02 3:04:05 PM")
+				payload["next_run"] = app.Scheduler.Entry(app.MonitorMap[x.HostID]).Next.Format("2006-01-02 3:04:05 PM")
 			} else {
-				data["next_run"] = "Pending..."
+				payload["next_run"] = "Pending..."
 			}
 
-			payload["host"] = x.HostName
+			payload["host_name"] = x.HostName
 			payload["service"] = x.Service.ServiceName
 			if x.LastCheck.After(yearone) {
 				payload["last_run"] = x.LastCheck.Format("2006-01-02 3:04:05 PM")

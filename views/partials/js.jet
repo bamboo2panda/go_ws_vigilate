@@ -12,10 +12,202 @@
     })
 
     let publicChannel = pusher.subscribe("public-channel");
+    let pritvateChannel = pusher.subscribe("private-channel-{{.User.ID}}");
 
-    publicChannel.bind("test-event", function(data) {
+    pritvateChannel.bind("private-message", function(data){
+        attention.alert({
+            html: data.message,
+            icon: "success"
+        })
+    })
+
+    publicChannel.bind("app-starting", function(data) {
+        let toggle = document.getElementById("monitoring-live");
+        toggle.checked = true;
         successAlert(data.message);
     })
+
+    publicChannel.bind("app-stoping", function(data) {
+        let toggle = document.getElementById("monitoring-live");
+        toggle.checked = false;
+        warningAlert(data.message);
+
+        let scheduledTableExists = !!document.getElementById("schedule-table");
+        if (scheduledTableExists) {
+            let scheduledTable = document.getElementById("schedule-table");
+            scheduledTable.tBodies[0].innerHTML = "";
+            let newRow = scheduledTable.tBodies[0].insertRow(-1);
+            let newCell = newRow.insertCell(0);
+            newCell.setAttribute("colspan", "5");
+            newCell.innerHTML = "No scheduled checks";
+        }
+    })
+
+    publicChannel.bind("schedule-item-removed-event", function(data){
+        let rowExists = !!document.getElementById("schedule-" + data.host_service_id);
+        if (rowExists) {
+            let row = document.getElementById("schedule-" + data.host_service_id);
+            row.parentNode.removeChild(row);
+
+            // check to see if we need to add a "no scheduled checks" row
+            let currentTable = document.getElementById("schedule-table");
+            if (currentTable.rows.length == 1) {
+                let newRow = currentTable.tBodies[0].insertRow(-1);
+                let newCell = newRow.insertCell(0);
+                newCell.setAttribute("colspan", "5");
+                newCell.innerHTML = "No scheduled checks";
+            }
+        }
+    });
+
+    publicChannel.bind("schedule-changed-event", function(data){
+        console.log("got change event", data)
+        let scheduledTableExists = !!document.getElementById("schedule-table");
+        if (scheduledTableExists) {
+            let scheduleTable = document.getElementById("schedule-table");
+            let tableContent = scheduleTable.innerHTML;
+            if (tableContent.includes("No scheduled checks")){
+                let rowCount = scheduleTable.rows.length;
+                for (let i = rowCount -1; i > 0; i --){
+                    scheduleTable.deleteRow(i);
+                }
+            }
+
+            // delete existing row
+            let rowExists = !!document.getElementById("schedule-" + data.host_service_id);
+            if (rowExists) {
+                let row = document.getElementById("schedule-" + data.host_service_id);
+                row.parentNode.removeChild(row);
+            }
+
+            let newRow = scheduleTable.tBodies[0].insertRow(-1);
+            newRow.setAttribute("id", "schedule-" + data.host_service_id)
+
+            let newCell = newRow.insertCell(0);
+            let newText = document.createTextNode(data.host_name);
+            newCell.appendChild(newText);
+
+            newCell = newRow.insertCell(1);
+            newText = document.createTextNode(data.service);
+            newCell.appendChild(newText);
+
+            newCell = newRow.insertCell(2);
+            newText = document.createTextNode(data.schedule);
+            newCell.appendChild(newText);
+
+            newCell = newRow.insertCell(3);
+            newText = document.createTextNode(data.last_run);
+            newCell.appendChild(newText);
+
+            newCell = newRow.insertCell(4);
+            if (data.next_run === undefined) {
+                newText = document.createTextNode("Pending...");
+            } else {
+                newText = document.createTextNode(data.next_run);
+            }
+            newCell.appendChild(newText);
+        }
+    });
+
+    publicChannel.bind("host-service-status-changed", function(data) {
+        attention.toast({
+            msg: data.message,
+            icon: "info",
+            timer: 30000,
+            showCloseButton: true,
+        })
+
+        // Update tables
+
+        // remove existing table row if it exist
+       deleteHostServiceRow(data.host_service_id);
+
+       updateHostServiceTable(data);
+        
+
+    })
+
+    function deleteHostServiceRow(hostServiceID){
+        let exists = !!document.getElementById("host-service-" + hostServiceID)
+        console.log("Trying to remove row")
+        if (exists) {
+            console.log("trying to remove row host-service-" + hostServiceID)
+            let row = document.getElementById("host-service-" + hostServiceID)
+            row.parentNode.removeChild(row)
+
+            let tables = ["healthy", "pending", "warning", "problem"]
+
+            for (let i = 0; i < tables.length; i++) {
+                let currentTableExists = !!document.getElementById(tables[i] + "-table");
+                if (currentTableExists) {
+                    let currentTable =  document.getElementById(tables[i] + "-table");
+                    if (currentTable.rows.length === 1) {
+                        let newRow = currentTable.tBodies[0].insertRow(-1);
+                        let newCell = newRow.insertCell(0);
+                        newCell.setAttribute("colspan", 3);
+                        newCell.innerHTML = "No services";
+                    }
+                }
+            }
+        }
+    }
+
+    function updateHostServiceTable(data){
+        let tableExists = !!document.getElementById(data.status + "-table");
+        if (tableExists) {
+            let tableRef = document.getElementById(data.status + "-table");
+            
+            let tableContent = tableRef.innerHTML;
+            if (tableContent.includes("No services")) {
+                let rowCount = tableRef.rows.length;
+                for (let i = rowCount - 1; i > 0; i--) {
+                    tableRef.deleteRow(i);
+                }
+            }
+            
+            
+            // update the tables if they exist
+            let newRow = tableRef.tBodies[0].insertRow(-1);
+
+            newRow.setAttribute("id", "host-service-" + data.host_service_id);
+
+            // insert the first td
+            let newCell = newRow.insertCell(0);
+            newCell.innerHTML = `
+                <span class="${data.icon}"></span> ${data.service_name}
+                <span class="badge bg-secondary pointer"  onclick="checkNow(${data.host_service_id}, ${data.status})"">Check Now</span>
+            `;
+
+            // insert second td
+            newCell = newRow.insertCell(1);
+            if (data.status !== "pending"){
+                newCell.innerHTML = `${data.last_check}`;
+            } else {
+                newCell.innerHTML = "Pending...";
+            }
+
+            newCell = newRow.insertCell(2);
+        }
+        
+    }
+
+    publicChannel.bind("host-service-count-changed", function(data) {
+        let healthyCountExists = !!document.getElementById("healthy_count");
+        if (healthyCountExists) {
+            document.getElementById("healthy_count").innerHTML = data.healthy_count
+            document.getElementById("problem_count").innerHTML = data.problem_count
+            document.getElementById("pending_count").innerHTML = data.pending_count
+            document.getElementById("warning_count").innerHTML = data.warning_count
+        }
+    })
+
+    // Looking for
+    //  - service go down
+    //  - service comes up
+    //  - service status changed
+    //  - shcedule changed
+    //  - monitoring is turned off
+    //  - next-run-event changes
 
     let attention = Prompt();
 
@@ -65,7 +257,7 @@
         ajax.open("POST", "/admin/preference/ajax/set-system-pref");
         ajax.send(formData);
         ajax.onreadystatechange = function() {
-            if (ajax.readyState ===4) {
+            if (ajax.readyState === 4) {
                 let resp = ajax.response;
                 if (!resp.ok) {
                     errorAlert("Errors: " + resp.message);

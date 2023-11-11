@@ -2,16 +2,17 @@ package helpers
 
 import (
 	"fmt"
-	"github.com/CloudyKit/jet/v6"
-	"github.com/justinas/nosurf"
-	"github.com/tsawler/vigilate/internal/config"
-	"github.com/tsawler/vigilate/internal/models"
-	"github.com/tsawler/vigilate/internal/templates"
 	"log"
 	"math/rand"
 	"net/http"
 	"runtime/debug"
 	"time"
+
+	"github.com/CloudyKit/jet/v6"
+	"github.com/justinas/nosurf"
+	"github.com/tsawler/vigilate/internal/config"
+	"github.com/tsawler/vigilate/internal/models"
+	"github.com/tsawler/vigilate/internal/templates"
 )
 
 const (
@@ -71,6 +72,14 @@ var views = jet.NewSet(
 	jet.NewOSFileSystemLoader("./views"),
 	jet.InDevelopmentMode(),
 )
+
+// SetViews set the view variable for testing
+func SetViews(path string) {
+	views = jet.NewSet(
+		jet.NewOSFileSystemLoader(path),
+		jet.InDevelopmentMode(),
+	)
+}
 
 // DefaultData adds default data which is accessible to all templates
 func DefaultData(td templates.TemplateData, r *http.Request, w http.ResponseWriter) templates.TemplateData {

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -33,11 +34,12 @@ func (repo *DBRepo) PusherAuth(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(responce)
 }
 
-func (repo *DBRepo) TestPusher(w http.ResponseWriter, r *http.Request) {
+// SendPrivateMessage is sample code for sendinfg to private channel
+func (repo *DBRepo) SendPrivateMessage(w http.ResponseWriter, r *http.Request) {
+	msg := r.URL.Query().Get("msg")
+	id := r.URL.Query().Get("id")
+
 	data := make(map[string]string)
-	data["message"] = "Hello, world"
-	err := repo.App.WsClient.Trigger("public-channel", "test-event", data)
-	if err != nil {
-		log.Println(err)
-	}
+	data["message"] = msg
+	_ = repo.App.WsClient.Trigger(fmt.Sprintf("private-channel-%s", id), "private-message", data)
 }

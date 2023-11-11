@@ -67,10 +67,5 @@
 
 {{block js()}}
 
-<script>
-    const anchor = window.location.hash;
-$(`a[href="${anchor}"]`).tab('show')
-</script>
-
 
 {{end}}
